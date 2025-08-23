@@ -24,6 +24,14 @@ class Chunker:
         tail = t[pos:]
         if tail.strip():
             blocks.extend(_split_paragraphs(tail))
+        
+        # FAST-PATH: if there are multiple small paragraphs that *collectively*
+        # fit within one chunk, keep them as **separate** chunks. This improves        
+        # retrieval granularity and makes tests like "top_k=2" deterministic
+        # even for small files such as "Alpha\n\nBeta\n\nGamma".
+        total_toks = sum(approx_tokens(b) for b in blocks)
+        if len(blocks) > 1 and total_toks <= self.max_tokens:
+            return blocks
 
         chunks: List[str] = []
         cur: List[str] = []
