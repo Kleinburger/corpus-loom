@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "corpusloom"
 version = "0.3.0"
 description = "CorpusLoom: chunking, retrieval, JSON-mode, and a CLI (cloom) for Ollama"
-authors = [{name="Your Name", email="you@example.com"}]
+authors = [{name="Ethan Leas", email="ethan.leas@gmail.com"}]
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
