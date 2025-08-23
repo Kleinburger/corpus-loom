@@ -53,7 +53,7 @@ class JsonMode:
                 continue
             try:
                 return self._pydantic_from_json(schema, jtxt)
-            except ValidationError as ve:
+            except Exception as ve:
                 messages += [{"role": "assistant", "content": candidate}, {"role": "user", "content": f"Validation error:\n{ve}\nReturn ONLY corrected JSON."}]
         raise ValidationFailedError("Failed to produce valid JSON:\n" + last_raw)
 
@@ -77,6 +77,6 @@ class JsonMode:
                 obj = self._pydantic_from_json(schema, jtxt)
                 self._append(convo_id, "assistant", candidate, {"kind": "chat_json_output"})
                 return obj
-            except ValidationError as ve:
+            except Exception as ve:
                 msgs += [{"role": "assistant", "content": candidate}, {"role": "user", "content": f"Validation error:\n{ve}\nReturn ONLY corrected JSON."}]
         raise ValidationFailedError("Failed to produce valid JSON:\n" + last_raw)
