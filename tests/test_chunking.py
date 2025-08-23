@@ -1,4 +1,4 @@
-from ollama_client_plus.chunking import Chunker
+from corpusloom.chunking import Chunker
 
 def test_chunker_basic():
     ch = Chunker(max_tokens=50, overlap_tokens=10)

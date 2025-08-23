@@ -1,5 +1,5 @@
 import pytest
-from ollama_client_plus.utils import extract_json_str
+from corpusloom.utils import extract_json_str
 
 def test_extract_json_with_fence_and_valid():
     text = "```json\n{\"a\": 1, \"b\": [2,3]}\n```"

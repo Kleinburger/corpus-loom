@@ -229,7 +229,7 @@ class OllamaClient:
 
         return doc_id, chunk_ids
 
-    def add_files(self, paths_or_globs: Iterable[str], *, encoding: str = "utf-8", embed_model: str = "nomic-embed-text", cache_embeddings: bool = True, per_file_metadata: Optional[Callable[[str], Dict[str, Any]] = None, strategy: str = "auto") -> List[tuple[str, list[str]]]:
+    def add_files(self, paths_or_globs: Iterable[str], *, encoding: str = "utf-8", embed_model: str = "nomic-embed-text", cache_embeddings: bool = True, per_file_metadata: Optional[Callable[[str], Dict[str, Any]]] = None, strategy: str = "auto") -> List[tuple[str, list[str]]]:
         results: List[tuple[str, list[str]]] = []
         exts_ok = {".txt", ".md", ".rst", ".py", ".cpp", ".hpp", ".c", ".h", ".json", ".yaml", ".yml", ".ini"}
         files: List[str] = []
@@ -246,7 +246,7 @@ class OllamaClient:
             except Exception:
                 file_hash = None
 
-                        existing = self.store.get_latest_document_by_source(path)
+            existing = self.store.get_latest_document_by_source(path)
             reuse_doc_id = None
             if existing:
                 doc_id_existing, meta_existing = existing
