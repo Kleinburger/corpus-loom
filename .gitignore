@@ -1,2 +1,4 @@
 src/corpusloom.egg-info
 dist
+tests/__pycache__
+src/corpusloom/__pycache__
