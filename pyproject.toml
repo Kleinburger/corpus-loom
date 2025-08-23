@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "corpusloom"
+version = "0.3.0"
+description = "CorpusLoom: chunking, retrieval, JSON-mode, and a CLI (cloom) for Ollama"
+authors = [{name="Your Name", email="you@example.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+dependencies = [
+    "requests>=2.31.0"
+]
+
+[project.optional-dependencies]
+json = ["pydantic>=1.10"]
+dev = ["pytest>=7.4", "ruff>=0.5.0", "mypy>=1.8", "pytest-cov>=4.1", "mypy>=1.8", "ruff>=0.5.0" ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"corpusloom" = ["py.typed"]
+[project.scripts]
+cloom = "corpusloom.cli:main"

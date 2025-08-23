@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install package + dev extras
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]" -v
+          # optional JSON validation extras
+          pip install -e ".[json]" -v || true
+      - name: Lint (ruff)
+        run: ruff check .
+      - name: Type check (mypy)
+        run: mypy --config-file mypy.ini corpusloom
+      - name: Run tests with coverage (branch)
+        run: |
+          pytest -q --cov=corpusloom --cov-branch --cov-report=term --cov-fail-under=100
+      - name: Upload coverage HTML (artifact)
+        if: ${{ always() }}
+        run: |
+          coverage html
+          tar -czf htmlcov.tgz htmlcov || true
+      - name: Store artifact
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: htmlcov.tgz

@@ -1,0 +1,10 @@
+[run]
+branch = True
+source = ollama_client_plus
+omit =
+    tests/*
+    examples/*
+
+[report]
+show_missing = True
+skip_covered = False
