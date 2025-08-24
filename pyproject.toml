@@ -8,7 +8,7 @@ version = "0.3.0"
 description = "CorpusLoom: chunking, retrieval, JSON-mode, and a CLI (cloom) for Ollama"
 authors = [{name="Ethan Leas", email="ethan.leas@gmail.com"}]
 readme = {file = "README.md", content-type ="text/markdown"}
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 requires-python = ">=3.9"
 dependencies = [
     "requests>=2.31.0"
@@ -26,6 +26,10 @@ where = ["src"]
 
 [project.scripts]
 cloom = "corpusloom.cli:main"
+
+[tool.setuptools]
+# Prevent emitting the License-File header in METADATA (and the licenses/ dir)
+license-files = []
 
 [tool.pytest.ini_options]
 filterwarnings = [
