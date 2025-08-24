@@ -50,7 +50,7 @@ class JsonMode:
                 "Install pydantic to use JSON validation: pip install 'pydantic>=1.10'"
             )
 
-    def _pydantic_from_json(self, schema: Type["BaseModel"], json_str: str):
+    def _pydantic_from_json(self, schema: Type[BaseModel], json_str: str):
         if hasattr(schema, "model_validate_json"):
             return schema.model_validate_json(json_str)
         return schema.parse_raw(json_str)
@@ -58,7 +58,7 @@ class JsonMode:
     def generate_json(
         self,
         prompt: str,
-        schema: Type["BaseModel"],
+        schema: Type[BaseModel],
         options: Optional[Dict[str, Any]] = None,
         retries: int = 2,
     ):
@@ -105,7 +105,7 @@ class JsonMode:
         self,
         convo_id: str,
         user_message: str,
-        schema: Type["BaseModel"],
+        schema: Type[BaseModel],
         options: Optional[Dict[str, Any]] = None,
         retries: int = 2,
     ):
