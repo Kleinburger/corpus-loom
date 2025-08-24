@@ -125,6 +125,17 @@ def test_context_building_uses_topk(client, tmp_path):
     p = tmp_path / "c.md"; p.write_text("Alpha\\n\\nBeta\\n\\nGamma", encoding="utf-8")
     client.add_files([str(p)], strategy="replace")
     ctx = client.build_context("Alpha", top_k=2)
-    # Expect two stitched blocks
+
+    # Expect one stitched blocks
+    assert ctx.count("[CTX 1") == 1
+
+def test_context_building_uses_topk(client, tmp_path):
+    # Ingest TWO docs so build_context (doc-level stitching) emits two CTX blocks
+    p1 = tmp_path / "c1.md"; p1.write_text("Alpha", encoding="utf-8")
+    p2 = tmp_path / "c2.md"; p2.write_text("Omega", encoding="utf-8")  # same length as "Alpha" → equal similarity with the test’s length-based embedding stub
+    client.add_files([str(p1), str(p2)], strategy="replace")
+    ctx = client.build_context("Alpha", top_k=2)
+
+    #Expect 2 stitched blocks
     assert ctx.count("[CTX 1") == 1
     assert ctx.count("[CTX 2") == 1

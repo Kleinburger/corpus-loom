@@ -23,5 +23,16 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "corpusloom" = ["py.typed"]
+
 [project.scripts]
 cloom = "corpusloom.cli:main"
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  # keep ResourceWarnings from your code visible by default
+  "default::ResourceWarning",
+
+  # ignore coverage.py’s sqlite shutdown chatter on 3.13/Windows
+  "ignore:unclosed database.*:ResourceWarning:coverage\\..*",
+  "ignore:unclosed database.*:ResourceWarning:sqlite3\\..*",
+]

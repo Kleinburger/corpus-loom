@@ -26,12 +26,19 @@ class Chunker:
             blocks.extend(_split_paragraphs(tail))
         
         # FAST-PATH: if there are multiple small paragraphs that *collectively*
-        # fit within one chunk, keep them as **separate** chunks. This improves        
-        # retrieval granularity and makes tests like "top_k=2" deterministic
-        # even for small files such as "Alpha\n\nBeta\n\nGamma".
+        # fit within one chunk, keep them as **separate** chunks. 
         total_toks = sum(approx_tokens(b) for b in blocks)
         if len(blocks) > 1 and total_toks <= self.max_tokens:
             return blocks
+
+        # subdivide any single block that exceeds max_tokens (except fenced code)
+        norm: List[str] = []
+        for b in blocks:
+            if (not b.strip().startswith("```")) and approx_tokens(b) > self.max_tokens:
+                norm.extend(_split_long_block(b, self.max_tokens, self.overlap_tokens))
+            else:
+                norm.append(b)
+        blocks = norm
 
         chunks: List[str] = []
         cur: List[str] = []
@@ -67,6 +74,25 @@ class Chunker:
                     cur.append(b); cur_toks += btoks
         flush()
         return chunks
+
+def _split_long_block(block: str, max_tokens: int, overlap_tokens: int) -> List[str]:
+    # Keep this in sync with approx_tokens() (≈ chars / 4)
+    char_cap = max(1, max_tokens * 4)
+    overlap_chars = max(0, overlap_tokens * 4)
+    n = len(block)
+    if n <= char_cap:
+        return [block]
+
+    out: List[str] = []
+    start = 0
+    while start < n:
+        end = min(n, start + char_cap)
+        out.append(block[start:end])
+        if end == n:
+            break
+        # slide forward with overlap
+        start = max(start + char_cap - overlap_chars, start + 1)
+    return out
 
 def _split_paragraphs(text: str) -> List[str]:
     lines = text.split("\n")

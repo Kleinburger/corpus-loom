@@ -1,6 +1,6 @@
 [run]
 branch = True
-source = ollama_client_plus
+source = corpusloom
 omit =
     tests/*
     examples/*
