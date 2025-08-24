@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Tuple
 from .utils import cosine
 from .store import Store
 
+
 class Retriever:
     def __init__(self, store: Store):
         self.store = store
@@ -14,13 +15,18 @@ class Retriever:
             vec_json = row[4]
             vec = json.loads(vec_json)
             sim = cosine(qvec, vec)
-            results.append((sim, {
-                "chunk_id": row[0],
-                "doc_id": row[1],
-                "idx": row[2],
-                "text": row[3],
-                "meta": json.loads(row[5] or "{}"),
-                "score": sim,
-            }))
+            results.append(
+                (
+                    sim,
+                    {
+                        "chunk_id": row[0],
+                        "doc_id": row[1],
+                        "idx": row[2],
+                        "text": row[3],
+                        "meta": json.loads(row[5] or "{}"),
+                        "score": sim,
+                    },
+                )
+            )
         results.sort(key=lambda x: x[0], reverse=True)
         return results

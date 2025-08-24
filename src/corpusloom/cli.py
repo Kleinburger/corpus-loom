@@ -9,17 +9,44 @@ from typing import Any, Dict, List, Optional
 from . import OllamaClient
 from .utils import extract_json_str
 
-def _add_common_client_args(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--model", default="gpt-oss:20b", help="Ollama model name/tag (default: gpt-oss:20b)")
-    p.add_argument("--host", default="http://localhost:11434", help="Ollama host base URL")
-    p.add_argument("--db", default="./.ollama_client/cache.sqlite", help="SQLite path for cache/corpus")
-    p.add_argument("--keep-alive", default="10m", help='Keep model warm after call (e.g., "10m", "0" to unload)')
-    p.add_argument("--calls-per-minute", type=int, default=0, help="Simple rate-limit (0 = off)")
 
-    p.add_argument("--opt", action="append", default=[], metavar="K=V",
-                   help="Add/override a generation option; can repeat. Example: --opt temperature=0.2 --opt num_ctx=16384")
-    p.add_argument("--opts-json", default=None, metavar="JSON_OR_PATH",
-                   help="JSON string or path to JSON file of options, merged last.")
+def _add_common_client_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--model",
+        default="gpt-oss:20b",
+        help="Ollama model name/tag (default: gpt-oss:20b)",
+    )
+    p.add_argument(
+        "--host", default="http://localhost:11434", help="Ollama host base URL"
+    )
+    p.add_argument(
+        "--db",
+        default="./.ollama_client/cache.sqlite",
+        help="SQLite path for cache/corpus",
+    )
+    p.add_argument(
+        "--keep-alive",
+        default="10m",
+        help='Keep model warm after call (e.g., "10m", "0" to unload)',
+    )
+    p.add_argument(
+        "--calls-per-minute", type=int, default=0, help="Simple rate-limit (0 = off)"
+    )
+
+    p.add_argument(
+        "--opt",
+        action="append",
+        default=[],
+        metavar="K=V",
+        help="Add/override a generation option; can repeat. Example: --opt temperature=0.2 --opt num_ctx=16384",
+    )
+    p.add_argument(
+        "--opts-json",
+        default=None,
+        metavar="JSON_OR_PATH",
+        help="JSON string or path to JSON file of options, merged last.",
+    )
+
 
 def _parse_options(args: argparse.Namespace) -> Dict[str, Any]:
     opts: Dict[str, Any] = {}
@@ -31,7 +58,7 @@ def _parse_options(args: argparse.Namespace) -> Dict[str, Any]:
         k = k.strip()
         v = v.strip()
         if v.lower() in ("true", "false"):
-            val: Any = (v.lower() == "true")
+            val: Any = v.lower() == "true"
         else:
             try:
                 if "." in v:
@@ -57,6 +84,7 @@ def _parse_options(args: argparse.Namespace) -> Dict[str, Any]:
         opts.update(data)
     return opts
 
+
 def _build_client(args: argparse.Namespace) -> OllamaClient:
     return OllamaClient(
         model=args.model,
@@ -67,44 +95,77 @@ def _build_client(args: argparse.Namespace) -> OllamaClient:
         calls_per_minute=args.calls_per_minute,
     )
 
+
 def cmd_ingest(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp ingest", description="Ingest files (chunk + embed + store)")
+    ap = argparse.ArgumentParser(
+        prog="ocp ingest", description="Ingest files (chunk + embed + store)"
+    )
     _add_common_client_args(ap)
     ap.add_argument("paths", nargs="+", help="Files or globs")
-    ap.add_argument("--strategy", choices=["auto", "replace", "skip"], default="auto", help="Re-ingest policy (default: auto)")
-    ap.add_argument("--embed-model", default="nomic-embed-text", help="Embedding model name")
+    ap.add_argument(
+        "--strategy",
+        choices=["auto", "replace", "skip"],
+        default="auto",
+        help="Re-ingest policy (default: auto)",
+    )
+    ap.add_argument(
+        "--embed-model", default="nomic-embed-text", help="Embedding model name"
+    )
     ap.add_argument("--encoding", default="utf-8", help="File encoding")
     args = ap.parse_args(argv)
 
     client = _build_client(args)
-    results = client.add_files(args.paths, encoding=args.encoding, embed_model=args.embed_model, strategy=args.strategy)
-    print(json.dumps({"ingested": [{"doc_id": d, "chunks": len(ch)} for d, ch in results]}, indent=2))
+    results = client.add_files(
+        args.paths,
+        encoding=args.encoding,
+        embed_model=args.embed_model,
+        strategy=args.strategy,
+    )
+    print(
+        json.dumps(
+            {"ingested": [{"doc_id": d, "chunks": len(ch)} for d, ch in results]},
+            indent=2,
+        )
+    )
     return 0
+
 
 def cmd_search(argv: List[str]) -> int:
     ap = argparse.ArgumentParser(prog="ocp search", description="Search similar chunks")
     _add_common_client_args(ap)
     ap.add_argument("query", help="Search query text")
     ap.add_argument("--top-k", type=int, default=5, help="Number of chunks to return")
-    ap.add_argument("--embed-model", default="nomic-embed-text", help="Embedding model for query")
+    ap.add_argument(
+        "--embed-model", default="nomic-embed-text", help="Embedding model for query"
+    )
     args = ap.parse_args(argv)
 
     client = _build_client(args)
-    hits = client.search_similar(args.query, embed_model=args.embed_model, top_k=args.top_k)
+    hits = client.search_similar(
+        args.query, embed_model=args.embed_model, top_k=args.top_k
+    )
     print(json.dumps(hits, indent=2, ensure_ascii=False))
     return 0
 
+
 def cmd_context(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp context", description="Build a stitched context block from top-k similar chunks")
+    ap = argparse.ArgumentParser(
+        prog="ocp context",
+        description="Build a stitched context block from top-k similar chunks",
+    )
     _add_common_client_args(ap)
     ap.add_argument("query", help="Context query text")
     ap.add_argument("--top-k", type=int, default=5)
     ap.add_argument("--embed-model", default="nomic-embed-text")
-    ap.add_argument("--out", default=None, help="Write context to file (default stdout)")
+    ap.add_argument(
+        "--out", default=None, help="Write context to file (default stdout)"
+    )
     args = ap.parse_args(argv)
 
     client = _build_client(args)
-    ctx = client.build_context(args.query, top_k=args.top_k, embed_model=args.embed_model)
+    ctx = client.build_context(
+        args.query, top_k=args.top_k, embed_model=args.embed_model
+    )
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             f.write(ctx)
@@ -112,6 +173,7 @@ def cmd_context(argv: List[str]) -> int:
     else:
         print(ctx)
     return 0
+
 
 def _read_prompt(args: argparse.Namespace) -> str:
     if getattr(args, "prompt", None):
@@ -121,11 +183,16 @@ def _read_prompt(args: argparse.Namespace) -> str:
             return f.read()
     data = sys.stdin.read()
     if not data:
-        raise SystemExit("No prompt provided. Use --prompt, --prompt-file, or pipe via stdin.")
+        raise SystemExit(
+            "No prompt provided. Use --prompt, --prompt-file, or pipe via stdin."
+        )
     return data
 
+
 def cmd_generate(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp generate", description="Single-shot generation")
+    ap = argparse.ArgumentParser(
+        prog="ocp generate", description="Single-shot generation"
+    )
     _add_common_client_args(ap)
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--prompt", help="Prompt text")
@@ -147,8 +214,11 @@ def cmd_generate(argv: List[str]) -> int:
         print(res.response_text)
     return 0
 
+
 def cmd_chat(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp chat", description="Chat with conversation state")
+    ap = argparse.ArgumentParser(
+        prog="ocp chat", description="Chat with conversation state"
+    )
     sub = ap.add_subparsers(dest="subcmd", required=True)
 
     common = argparse.ArgumentParser(add_help=False)
@@ -157,14 +227,20 @@ def cmd_chat(argv: List[str]) -> int:
     ap_new = sub.add_parser("new", parents=[common], help="Create a new conversation")
     ap_new.add_argument("--name", default=None)
     ap_new.add_argument("--system", default=None)
-    ap_new.add_argument("--message", default=None, help="Send a first message after creating")
+    ap_new.add_argument(
+        "--message", default=None, help="Send a first message after creating"
+    )
 
-    ap_send = sub.add_parser("send", parents=[common], help="Send a message to a conversation")
+    ap_send = sub.add_parser(
+        "send", parents=[common], help="Send a message to a conversation"
+    )
     ap_send.add_argument("--convo-id", required=True)
     ap_send.add_argument("--message", required=True)
     ap_send.add_argument("--stream", action="store_true")
 
-    ap_hist = sub.add_parser("history", parents=[common], help="Show conversation history")
+    ap_hist = sub.add_parser(
+        "history", parents=[common], help="Show conversation history"
+    )
     ap_hist.add_argument("--convo-id", required=True)
 
     args = ap.parse_args(argv)
@@ -201,13 +277,21 @@ def cmd_chat(argv: List[str]) -> int:
 
     return 1
 
+
 def cmd_json(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp json", description="JSON-mode generation with optional Pydantic schema validation")
+    ap = argparse.ArgumentParser(
+        prog="ocp json",
+        description="JSON-mode generation with optional Pydantic schema validation",
+    )
     _add_common_client_args(ap)
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--prompt", help="Prompt text")
     g.add_argument("--prompt-file", help="Read prompt from file")
-    ap.add_argument("--schema", default=None, help='Optional schema as "module:Class" for Pydantic model')
+    ap.add_argument(
+        "--schema",
+        default=None,
+        help='Optional schema as "module:Class" for Pydantic model',
+    )
     args = ap.parse_args(argv)
 
     client = _build_client(args)
@@ -239,23 +323,35 @@ def cmd_json(argv: List[str]) -> int:
         print(jtxt)
         return 0
 
+
 def cmd_template(argv: List[str]) -> int:
-    ap = argparse.ArgumentParser(prog="ocp template", description="Manage prompt templates")
+    ap = argparse.ArgumentParser(
+        prog="ocp template", description="Manage prompt templates"
+    )
     sub = ap.add_subparsers(dest="subcmd", required=True)
 
     common = argparse.ArgumentParser(add_help=False)
     _add_common_client_args(common)
 
-    ap_add = sub.add_parser("add", parents=[common], help="Register or update a template")
+    ap_add = sub.add_parser(
+        "add", parents=[common], help="Register or update a template"
+    )
     ap_add.add_argument("--name", required=True)
     ap_add.add_argument("--file", required=True)
 
     ap_list = sub.add_parser("list", parents=[common], help="List templates")
 
-    ap_render = sub.add_parser("render", parents=[common], help="Render a template with variables")
+    ap_render = sub.add_parser(
+        "render", parents=[common], help="Render a template with variables"
+    )
     ap_render.add_argument("--name", required=True)
-    ap_render.add_argument("--var", action="append", default=[], metavar="K=V",
-                           help="Template variable (repeatable).")
+    ap_render.add_argument(
+        "--var",
+        action="append",
+        default=[],
+        metavar="K=V",
+        help="Template variable (repeatable).",
+    )
 
     args = ap.parse_args(argv)
     client = _build_client(args)
@@ -274,7 +370,8 @@ def cmd_template(argv: List[str]) -> int:
     if args.subcmd == "render":
         vars_dict: Dict[str, Any] = {}
         for pair in args.var:
-            if "=" not in pair: continue
+            if "=" not in pair:
+                continue
             k, v = pair.split("=", 1)
             vars_dict[k.strip()] = v.strip()
         out = client.render_template(args.name, **vars_dict)
@@ -283,12 +380,15 @@ def cmd_template(argv: List[str]) -> int:
 
     return 1
 
+
 def main(argv: Optional[List[str]] = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     if not argv:
         argv = ["--help"]
 
-    top = argparse.ArgumentParser(prog="ocp", description="Ollama Client Plus (ocp) CLI")
+    top = argparse.ArgumentParser(
+        prog="ocp", description="Ollama Client Plus (ocp) CLI"
+    )
     sub = top.add_subparsers(dest="cmd", required=True)
     sub.add_parser("ingest")
     sub.add_parser("search")
@@ -315,6 +415,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if cmd == "template":
         return cmd_template(rest)
     return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
