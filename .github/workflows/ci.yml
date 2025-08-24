@@ -93,6 +93,10 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        packages-dir: dist/
+        verbose: true
+        skip-existing: true
+        verify-metadata: true
 
   publish:
     name: Publish to PyPI
@@ -119,3 +123,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+          packages-dir: dist/
