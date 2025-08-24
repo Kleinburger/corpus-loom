@@ -1,10 +1,9 @@
-import sys
+import importlib
 import io
 import json
 import runpy
+import sys
 import types
-import importlib
-from pathlib import Path
 
 import pytest
 
@@ -85,7 +84,10 @@ class StubClient:
 
 
 def run_with_cli(argv, stdin_text=None):
-    import sys, importlib, corpusloom.cli as cli
+    import importlib
+    import sys
+
+    import corpusloom.cli as cli
 
     old_argv = sys.argv
     try:

@@ -2,12 +2,12 @@ import builtins
 import importlib
 import json
 from types import SimpleNamespace
+
 import pytest
 
 import corpusloom.json_mode as jm_mod
-from corpusloom.json_mode import JsonMode
 from corpusloom.exceptions import ValidationFailedError
-
+from corpusloom.json_mode import JsonMode
 
 # ---------- Helpers
 

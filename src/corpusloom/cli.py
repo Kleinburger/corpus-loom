@@ -35,7 +35,8 @@ def _add_common_client_args(p: argparse.ArgumentParser) -> None:
         action="append",
         default=[],
         metavar="K=V",
-        help="Add/override a generation option; can repeat. Example: --opt temperature=0.2 --opt num_ctx=16384",
+        help="Add/override a generation option; can repeat. Example: --opt temperature=0.2 "
+        "--opt num_ctx=16384",
     )
     p.add_argument(
         "--opts-json",
@@ -309,9 +310,7 @@ def cmd_template(argv: List[str]) -> int:
     ap_add = sub.add_parser("add", parents=[common], help="Register or update a template")
     ap_add.add_argument("--name", required=True)
     ap_add.add_argument("--file", required=True)
-
-    ap_list = sub.add_parser("list", parents=[common], help="List templates")
-
+    sub.add_parser("list", parents=[common], help="List templates")
     ap_render = sub.add_parser("render", parents=[common], help="Render a template with variables")
     ap_render.add_argument("--name", required=True)
     ap_render.add_argument(

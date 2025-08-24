@@ -1,7 +1,7 @@
 import json
 import sqlite3
+
 import pytest
-from contextlib import contextmanager
 
 import corpusloom.store as store_mod
 from corpusloom.store import Store

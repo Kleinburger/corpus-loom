@@ -20,7 +20,6 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from typing import Any
 
 from corpusloom import OllamaClient
 from corpusloom.utils import extract_json_str

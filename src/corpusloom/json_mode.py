@@ -19,7 +19,8 @@ except Exception:
 
 JSON_SYSTEM = (
     "You are a strict JSON generator. Return ONLY valid JSON that conforms exactly to the schema.\n"
-    "Do not include prose, code fences, or explanations. No trailing commas. Use explicit nulls where needed."
+    "Do not include prose, code fences, or explanations. No trailing commas. Use explicit nulls "
+    "where needed."
 )
 
 

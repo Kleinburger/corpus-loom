@@ -1,7 +1,8 @@
-import pytest
-import types
 import time
-from corpusloom.utils import extract_json_str, cosine, approx_tokens, RateLimiter
+
+import pytest
+
+from corpusloom.utils import RateLimiter, approx_tokens, cosine, extract_json_str
 
 
 def test_extract_json_with_fence_and_valid():

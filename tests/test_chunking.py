@@ -1,11 +1,9 @@
-import re
 from corpusloom.chunking import (
     Chunker,
+    _hard_wrap,
     _split_long_block,
     _split_paragraphs,
-    _hard_wrap,
 )
-from corpusloom.utils import approx_tokens
 
 
 def test_chunker_basic():
@@ -339,6 +337,7 @@ def test_split_paragraphs_header_terminated_by_blank():
 def test_split_paragraphs_header_breaks_buffer():
     # Reload to avoid stale module copies between runs
     import importlib
+
     import corpusloom.chunking as ch
 
     importlib.reload(ch)

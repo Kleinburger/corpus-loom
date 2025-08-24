@@ -24,7 +24,7 @@ jobs:
           # optional JSON validation extras
           pip install -e ".[json]" -v || true
       - name: Lint (ruff)
-        run: ruff check .
+        run: ruff check ./src/
       - name: Type check (mypy)
         run: mypy --config-file mypy.ini corpusloom
       - name: Run tests with coverage (branch)
@@ -41,3 +41,23 @@ jobs:
         with:
           name: coverage-${{ matrix.python-version }}
           path: htmlcov.tgz
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # Only run on tag pushes that look like v1.2.3
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write   # for Trusted Publishing (recommended)
+      contents: read
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      # ► Recommended: PyPI Trusted Publishing via OIDC (no API token needed)
+      - name: Publish to PyPI (trusted publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true

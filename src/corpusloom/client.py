@@ -4,7 +4,7 @@ import glob as _glob
 import hashlib
 import json
 import os
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional
 
 import requests
 

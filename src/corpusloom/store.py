@@ -243,7 +243,8 @@ class Store:
     def get_latest_document_by_source(self, source: str):
         with self._lock, self._conn_ctx() as con:
             row = con.execute(
-                "SELECT id, meta_json FROM documents WHERE source=? ORDER BY created_at DESC LIMIT 1",
+                "SELECT id, meta_json FROM documents WHERE source=? " \
+                "ORDER BY created_at DESC LIMIT 1",
                 (source,),
             ).fetchone()
         if not row:
