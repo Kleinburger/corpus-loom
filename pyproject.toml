@@ -24,6 +24,9 @@ where = ["src"]
 [tool.setuptools.package-data]
 "corpusloom" = ["py.typed"]
 
+[tool.setuptools]
+license-files = ["LICENSE"]
+
 [project.scripts]
 cloom = "corpusloom.cli:main"
 
