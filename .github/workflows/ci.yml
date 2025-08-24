@@ -26,7 +26,7 @@ jobs:
       - name: Lint (ruff)
         run: ruff check ./src/
       - name: Type check (mypy)
-        run: mypy --config-file mypy.ini corpusloom
+        run: mypy --config-file mypy.ini
       - name: Run tests with coverage (branch)
         run: |
           pytest -q --cov=corpusloom --cov-branch --cov-report=term --cov-fail-under=93
