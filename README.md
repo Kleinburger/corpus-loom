@@ -341,14 +341,14 @@ Register, list, and render prompt templates:
 ```bash
 cloom template add --name testplan --file templates/testplan.md
 cloom template list
-cloom template render --name testplan --var requirement=REQ-045 --var phase=CDR
+cloom template render --name testplan --var requirement=REQ-045 --var phase=init
 ```
 
 Python:
 
 ```python
 client.register_template("risk", "List risks for {system} in {phase}.")
-prompt = client.render_template("risk", system="uplink comms", phase="CDR")
+prompt = client.render_template("risk", system="uplink comms", phase="init")
 res = client.generate(prompt)
 ```
 
