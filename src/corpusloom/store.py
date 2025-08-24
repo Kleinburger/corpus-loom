@@ -1,9 +1,16 @@
 from __future__ import annotations
-import json, sqlite3, threading, time, uuid, os
+
+import json
+import os
+import sqlite3
+import threading
+import time
+import uuid
 from contextlib import contextmanager
 from typing import Any, Dict, Iterable, List, Optional
-from .utils import ensure_dir
+
 from .models import Message
+from .utils import ensure_dir
 
 
 class Store:
@@ -106,28 +113,20 @@ class Store:
 
     def get_template(self, name: str) -> Optional[str]:
         with self._lock, self._conn_ctx() as con:
-            row = con.execute(
-                "SELECT template FROM templates WHERE name=?", (name,)
-            ).fetchone()
+            row = con.execute("SELECT template FROM templates WHERE name=?", (name,)).fetchone()
             return row[0] if row else None
 
     def list_templates(self) -> Dict[str, str]:
         with self._lock, self._conn_ctx() as con:
-            rows = con.execute(
-                "SELECT name, template FROM templates ORDER BY name"
-            ).fetchall()
+            rows = con.execute("SELECT name, template FROM templates ORDER BY name").fetchall()
             return {r[0]: r[1] for r in rows}
 
     def get_embedding(self, key: str) -> Optional[List[float]]:
         with self._lock, self._conn_ctx() as con:
-            row = con.execute(
-                "SELECT vector_json FROM embeddings WHERE key=?", (key,)
-            ).fetchone()
+            row = con.execute("SELECT vector_json FROM embeddings WHERE key=?", (key,)).fetchone()
             return json.loads(row[0]) if row else None
 
-    def put_embedding(
-        self, key: str, model: str, text_hash: str, vector: List[float]
-    ) -> None:
+    def put_embedding(self, key: str, model: str, text_hash: str, vector: List[float]) -> None:
         now = time.time()
         with self._lock, self._conn_ctx() as con:
             con.execute(
@@ -182,14 +181,10 @@ class Store:
 
     def get_conversation_system(self, convo_id: str) -> Optional[str]:
         with self._lock, self._conn_ctx() as con:
-            row = con.execute(
-                "SELECT system FROM conversations WHERE id=?", (convo_id,)
-            ).fetchone()
+            row = con.execute("SELECT system FROM conversations WHERE id=?", (convo_id,)).fetchone()
             return row[0] if row else None
 
-    def upsert_document(
-        self, source: str, meta: Optional[Dict[str, Any]] = None
-    ) -> str:
+    def upsert_document(self, source: str, meta: Optional[Dict[str, Any]] = None) -> str:
         did = str(uuid.uuid4())
         now = time.time()
         with self._lock, self._conn_ctx() as con:
@@ -270,9 +265,7 @@ class Store:
     def get_chunk_hash_map(self, doc_id: str) -> dict:
         out = {}
         with self._lock, self._conn_ctx() as con:
-            for r in con.execute(
-                "SELECT id, meta_json FROM chunks WHERE doc_id=?", (doc_id,)
-            ):
+            for r in con.execute("SELECT id, meta_json FROM chunks WHERE doc_id=?", (doc_id,)):
                 m = json.loads(r[1] or "{}")
                 ch = m.get("chunk_hash")
                 if ch:

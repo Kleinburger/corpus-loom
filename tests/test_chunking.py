@@ -7,6 +7,7 @@ from corpusloom.chunking import (
 )
 from corpusloom.utils import approx_tokens
 
+
 def test_chunker_basic():
     ch = Chunker(max_tokens=50, overlap_tokens=10)
     text = "## Header\n\nThis is a paragraph.\n\n More Text for Test." * 80
@@ -14,8 +15,10 @@ def test_chunker_basic():
     assert len(chunks) >= 1
     assert all(isinstance(c, str) and c for c in chunks)
 
+
 def test_chunker_empty_returns_empty_list():
     assert Chunker().chunk_text("") == []
+
 
 def test_chunker_windows_newlines_and_code_block():
     text = "A\r\n\r\n```py\r\nprint(1)\r\n```\r\n\r\nB"
@@ -25,11 +28,13 @@ def test_chunker_windows_newlines_and_code_block():
     assert any(b.strip().startswith("```") and b.strip().endswith("```") for b in out)
     assert any(b.strip() == "B" for b in out)
 
+
 def test_chunker_forces_multiple_chunks_when_small_max():
     c = Chunker(max_tokens=8, overlap_tokens=2)
     long_text = "x" * 200  # ~50 tokens with the default heuristic -> multiple chunks
     out = c.chunk_text(long_text)
     assert len(out) >= 2
+
 
 def test_chunker_small_paragraphs_fastpath_multiple_blocks():
     text = "Alpha\n\nBeta\n\nGamma"
@@ -37,11 +42,13 @@ def test_chunker_small_paragraphs_fastpath_multiple_blocks():
     # Fast-path should keep separate blocks when they fit within one chunk
     assert out == ["Alpha", "Beta", "Gamma"]
 
+
 def test_chunker_code_only_block_no_pre_no_tail():
     # Covers branches where pre.strip() is False and tail.strip() is False.
     text = "```py\nprint(1)\n```"
     out = Chunker().chunk_text(text)
     assert out == [text]
+
 
 def test_chunker_overlap_disabled_else_branch():
     # Force the else-branch (cur_toks + btoks > max and cur is not empty)
@@ -50,8 +57,8 @@ def test_chunker_overlap_disabled_else_branch():
     c = Chunker(max_tokens=max_tok, overlap_tokens=0)
 
     # First block ~18 tokens, second ~10 tokens -> 18 + 10 > 20 => else path.
-    a = "a" * 70   # ceil(70/4) = 18
-    b = "b" * 40   # ceil(40/4) = 10
+    a = "a" * 70  # ceil(70/4) = 18
+    b = "b" * 40  # ceil(40/4) = 10
     out = c.chunk_text(a + "\n\n" + b)
 
     # We should get two chunks. With overlap 0, the second chunk must NOT start
@@ -59,6 +66,7 @@ def test_chunker_overlap_disabled_else_branch():
     assert len(out) >= 2
     assert out[0].startswith("a")
     assert out[1].split("\n", 1)[0].startswith("b")  # first line of second chunk starts with 'b'
+
 
 def test_chunker_overlap_enabled_else_branch_with_overlap_applied():
     # Same overflow condition, but overlap ENABLED -> second chunk begins with tail of previous.
@@ -74,14 +82,15 @@ def test_chunker_overlap_enabled_else_branch_with_overlap_applied():
     second = out[1]
     assert second.startswith("a" * 8)
 
+
 def test_chunker_else_branch_hard_wrap_true_path():
     # Drive the else-branch + subdivision path; piece sizes come from the earlier pre-split
     max_tok = 10
     ov_tok = 2
     c = Chunker(max_tokens=max_tok, overlap_tokens=ov_tok)
 
-    a = "x" * 35   # ceil(35/4) = 9 tokens
-    b = "y" * 80   # ceil(80/4) = 20 tokens -> pre-split into 40+40 char pieces
+    a = "x" * 35  # ceil(35/4) = 9 tokens
+    b = "y" * 80  # ceil(80/4) = 20 tokens -> pre-split into 40+40 char pieces
     out = c.chunk_text(a + "\n\n" + b)
 
     assert len(out) >= 2
@@ -94,16 +103,18 @@ def test_chunker_else_branch_hard_wrap_true_path():
     # At least one wrapped piece should be "large enough" (≈ width window is 40 chars)
     assert any(len(seg.replace("\n", "")) >= 35 for seg in y_like)
 
+
 # Cover the else-branch *non* hard-wrap sub-path (approx_tokens(b) <= 1.25*max)
 def test_chunker_else_branch_not_hardwrap_path():
     c = Chunker(max_tokens=10, overlap_tokens=2)
-    a = "x" * 35   # 9 tokens
-    b = "y" * 36   # 9 tokens (<= 1.25*10) -> else-branch but NOT hard-wrap
+    a = "x" * 35  # 9 tokens
+    b = "y" * 36  # 9 tokens (<= 1.25*10) -> else-branch but NOT hard-wrap
     out = c.chunk_text(a + "\n\n" + b)
 
     assert len(out) >= 2
     assert any("x" in seg for seg in out)
     assert any("y" in seg for seg in out)
+
 
 def test_chunker_flush_on_exact_max_inside_if_path():
     # Cover the inner "if cur_toks >= self.max_tokens: flush()" path.
@@ -114,6 +125,7 @@ def test_chunker_flush_on_exact_max_inside_if_path():
     out = c.chunk_text(exact)
     # Should still produce a single chunk, but the exact-max flush path is taken.
     assert out == [exact]
+
 
 def test_chunker_if_branch_flush_on_exact_max():
     # overlap 0 to simplify expectations
@@ -129,6 +141,7 @@ def test_chunker_if_branch_flush_on_exact_max():
     assert "a" * 24 in out[0] and "b" * 16 in out[0]
     assert any("d" * 24 in seg for seg in out[1:])
 
+
 def test_chunker_else_branch_hard_wrap_on_long_code_block():
     c = Chunker(max_tokens=10, overlap_tokens=2)
 
@@ -142,11 +155,13 @@ def test_chunker_else_branch_hard_wrap_on_long_code_block():
     # Make sure we really processed the fence (pieces will still include backticks)
     assert any("```" in seg for seg in out)
 
+
 def test_split_long_block_early_return_when_small():
     # Calls helper directly to hit "if n <= char_cap: return [block]".
     block = "short"
     res = _split_long_block(block, max_tokens=100, overlap_tokens=10)
     assert res == [block]
+
 
 def test_split_paragraphs_heading_and_blank():
     # Exercise heading detection and blank-line flushing.
@@ -154,6 +169,7 @@ def test_split_paragraphs_heading_and_blank():
     blocks = _split_paragraphs(text)
     assert "Title line\nparagraph line" in blocks
     assert "# Heading 1\nbody" in blocks
+
 
 def test_hard_wrap_prefers_newline_cut_and_filters_empty():
     # Newline inside the window; the middle blank/space-only line is filtered by final list-comp
@@ -165,6 +181,7 @@ def test_hard_wrap_prefers_newline_cut_and_filters_empty():
     # Overlap can trim a leading char; allow "part2" or "art2"
     assert any(p.endswith("part2") or p.endswith("art2") for p in pieces)
 
+
 def test_hard_wrap_prefers_space_cut():
     # No newline within width, but a space exists -> should cut at space.
     s = "aaaa bbbb cccc"
@@ -174,6 +191,7 @@ def test_hard_wrap_prefers_space_cut():
     assert pieces[0].startswith("aaaa")
     assert " " in pieces[0] or pieces[0].endswith("aaaa") is False
 
+
 def test_hard_wrap_fallback_cut_no_space_no_newline():
     # No spaces or newlines -> fallback to j (hard cut), with overlap stepping.
     s = "q" * 85
@@ -181,6 +199,7 @@ def test_hard_wrap_fallback_cut_no_space_no_newline():
     # Expect at least 3 pieces due to overlap stepping: 0..40, 36..76, 72..85
     assert len(pieces) >= 3
     assert all(p for p in pieces)  # no empty segments after strip()
+
 
 def test_hard_wrap_space_cut_without_newline():
     s = "word1 word2 word3"
@@ -191,6 +210,7 @@ def test_hard_wrap_space_cut_without_newline():
     # No piece should be empty
     assert all(p.strip() for p in pieces)
 
+
 def test_subdivide_long_non_fenced_block_true_path():
     c = Chunker(max_tokens=10, overlap_tokens=2)
     text = "Z" * 100  # definitely longer than max -> subdivide via _split_long_block
@@ -198,11 +218,13 @@ def test_subdivide_long_non_fenced_block_true_path():
     assert len(out) >= 2
     assert all(isinstance(x, str) for x in out)
 
+
 def test_subdivide_short_non_fenced_block_false_path():
     c = Chunker(max_tokens=50, overlap_tokens=2)
     text = "short paragraph"
     out = c.chunk_text(text)
     assert out == ["short paragraph"]
+
 
 def test_prepass_long_code_block_is_not_subdivided_here():
     c = Chunker(max_tokens=10, overlap_tokens=2)
@@ -213,12 +235,14 @@ def test_prepass_long_code_block_is_not_subdivided_here():
     assert len(out) >= 2
     assert any("```" in seg for seg in out)
 
+
 def test_else_branch_zero_overlap_skips_overlap_copy():
     c = Chunker(max_tokens=10, overlap_tokens=0)
     a = "a" * 35  # ~9 tokens
     b = "b" * 36  # ~9 tokens -> else-branch, NOT hard-wrap
     out = c.chunk_text(a + "\n\n" + b)
     assert len(out) >= 2  # no overlap copied into the next chunk
+
 
 def test_hard_wrap_fallback_cut_no_space_no_newline():
     s = "abcdefghijk"  # no spaces/newlines -> fallback to cut=j branch
@@ -227,6 +251,7 @@ def test_hard_wrap_fallback_cut_no_space_no_newline():
     assert all(len(p) <= 5 for p in pieces)
     # All characters must come from the original string
     assert all(set(p) <= set(s) for p in pieces)
+
 
 def test_hard_wrap_add_piece_no_flush_when_fits():
     # Make cur small and the first wrapped piece small enough to avoid the flush condition
@@ -243,6 +268,7 @@ def test_hard_wrap_add_piece_no_flush_when_fits():
     # proving that we didn’t flush before appending that first piece.
     assert any(("p" in seg and "z" in seg) for seg in out), out
 
+
 def test_or_short_circuit_first_block_long_code_not_split():
     """
     Cover the `or not cur` short-circuit where left side is False but right side True.
@@ -254,6 +280,7 @@ def test_or_short_circuit_first_block_long_code_not_split():
     out = c.chunk_text(code)
     # Stays as a single chunk; exercised path: (cur_toks + btoks <= max) == False, (not cur) == True
     assert out == [code]
+
 
 def test_overlap_tail_added_when_nonempty():
     """
@@ -272,12 +299,14 @@ def test_overlap_tail_added_when_nonempty():
     assert out[1].startswith("a" * (ov_tok * 4))
     assert set(out[1].replace("\n", "")) <= {"a", "b"}
 
+
 def test_split_long_block_returns_original_when_short():
     # Cover `_split_long_block` early return branch `if n <= char_cap: return [block]`.
     max_tok = 10
     block = "x" * (max_tok * 4)  # exactly char_cap
     got = _split_long_block(block, max_tokens=max_tok, overlap_tokens=2)
     assert got == [block]
+
 
 def test_split_long_block_overlap_ge_cap_slides_by_one():
     """
@@ -292,21 +321,26 @@ def test_split_long_block_overlap_ge_cap_slides_by_one():
     # Windows should be monotonically shifting by 1 char
     assert all(len(w) == char_cap or i == len(got) - 1 for i, w in enumerate(got))
 
+
 def test_split_paragraphs_header_breaks_buffer():
     from corpusloom.chunking import _split_paragraphs
+
     text = "para line\n# Heading 1\nnext"
     blocks = _split_paragraphs(text)
     assert blocks == ["para line", "# Heading 1\nnext"]
+
 
 def test_split_paragraphs_header_terminated_by_blank():
     text = "# Heading 1\n\nNext para line"
     blocks = _split_paragraphs(text)
     assert blocks == ["# Heading 1", "Next para line"]
 
+
 def test_split_paragraphs_header_breaks_buffer():
     # Reload to avoid stale module copies between runs
     import importlib
     import corpusloom.chunking as ch
+
     importlib.reload(ch)
 
     text = "para line\n# Heading 1\nnext"
@@ -319,6 +353,7 @@ def test_split_paragraphs_header_breaks_buffer():
     # Second block is the header *plus* the next line (until a blank line)
     assert blocks[1].splitlines() == ["# Heading 1", "next"], f"second block was {blocks[1]!r}"
 
+
 def test_hard_wrap_space_cut_without_newline_exact_match():
     s = "word1 word2 word3"
     pieces = _hard_wrap(s, width_chars=10, overlap_chars=2)
@@ -329,14 +364,15 @@ def test_hard_wrap_space_cut_without_newline_exact_match():
     # No double-space artifacts in any piece.
     assert all("  " not in p for p in pieces)
 
+
 def test_chunker_else_branch_hard_wrap_true_path_overlap_zero_no_tail():
     """
     Hit the else branch with hard-wrap True AND the 'no overlap' branch (ov_chars == 0),
     covering the case where `chunks and ov_chars > 0` is False.
     """
     c = Chunker(max_tokens=10, overlap_tokens=0)
-    a = "x" * 35     # 9 tokens -> fills cur but doesn't flush yet
-    b = "y" * 80     # 20 tokens -> triggers else and hard-wrap path
+    a = "x" * 35  # 9 tokens -> fills cur but doesn't flush yet
+    b = "y" * 80  # 20 tokens -> triggers else and hard-wrap path
     out = c.chunk_text(a + "\n\n" + b)
     assert len(out) >= 2
     # Since overlap is zero, next chunk should not start with 'x'
@@ -346,8 +382,8 @@ def test_chunker_else_branch_hard_wrap_true_path_overlap_zero_no_tail():
 def test_chunker_flush_on_reaching_max_in_if_branch():
     # max_tokens=5; first block is exactly 5 tokens (20 chars) → append then immediate flush
     c = Chunker(max_tokens=5, overlap_tokens=2)
-    block1 = "x" * 20   # ceil(20/4) == 5 tokens
-    block2 = "y" * 4    # 1 token
+    block1 = "x" * 20  # ceil(20/4) == 5 tokens
+    block2 = "y" * 4  # 1 token
     text = block1 + "\n\n" + block2
 
     out = c.chunk_text(text)
@@ -360,15 +396,16 @@ def test_chunker_flush_on_reaching_max_in_if_branch():
 def test_chunker_no_tail_overlap_when_overlap_zero():
     # Force the overflow/else branch, but with overlap disabled (ov_chars == 0)
     c = Chunker(max_tokens=5, overlap_tokens=0)
-    a = "a" * 16   # ≈4 tokens
-    b = "b" * 16   # ≈4 tokens
+    a = "a" * 16  # ≈4 tokens
+    b = "b" * 16  # ≈4 tokens
     text = a + "\n\n" + b
 
     out = c.chunk_text(text)
     # Must split into two chunks with NO overlap carried into the second one
     assert len(out) == 2
     assert out[0] == a
-    assert out[1] == b     # no 'a' overlap at the head
+    assert out[1] == b  # no 'a' overlap at the head
+
 
 def test_hard_wrap_short_string_breaks_immediately():
     # No '\n' or ' ' in range; rfind -> -1, so cut = j.
@@ -376,6 +413,7 @@ def test_hard_wrap_short_string_breaks_immediately():
     s = "short"
     pieces = _hard_wrap(s, width_chars=50, overlap_chars=10)
     assert pieces == [s]
+
 
 def test_chunker_else_branch_simple_path_with_overlap():
     """
@@ -426,6 +464,7 @@ def test_hard_wrap_continuation_branch_cut_lt_n():
     assert any("y" in p for p in pieces)
     assert any("z" in p for p in pieces)
 
+
 def test_first_block_uses_notcur_branch_even_when_too_big_codeblock():
     """
     Covers 66->68: in the main loop, the condition
@@ -434,31 +473,34 @@ def test_first_block_uses_notcur_branch_even_when_too_big_codeblock():
     We prevent early subdivision by using a fenced code block.
     """
     c = Chunker(max_tokens=10, overlap_tokens=2)
-    code = "```txt\n" + ("x" * 200) + "\n```"   # huge code fence (exempt from subdivision)
+    code = "```txt\n" + ("x" * 200) + "\n```"  # huge code fence (exempt from subdivision)
     out = c.chunk_text(code)
     # Should produce at least one chunk containing the code fence
     assert any(seg.strip().startswith("```") and seg.strip().endswith("```") for seg in out)
+
 
 def test_no_tail_overlap_when_overlap_disabled():
     """
     Covers 88->95: take the else branch (overflow with non-empty cur),
     but make ov_chars == 0 so the 'if chunks and ov_chars > 0' guard is false.
     """
-    c = Chunker(max_tokens=5, overlap_tokens=0)     # ov_chars == 0
-    a = "a" * 16   # ≈ 4 tokens
-    b = "b" * 16   # ≈ 4 tokens -> overflow triggers else; no overlap appended
+    c = Chunker(max_tokens=5, overlap_tokens=0)  # ov_chars == 0
+    a = "a" * 16  # ≈ 4 tokens
+    b = "b" * 16  # ≈ 4 tokens -> overflow triggers else; no overlap appended
     out = c.chunk_text(a + "\n\n" + b)
     assert out[0] == a
     assert out[1] == b
+
 
 def test_hard_wrap_breaks_when_segment_fits_exactly():
     """
     Covers 118->128 in _hard_wrap: choose a string whose first window sets cut == j == n,
     so 'if cut >= n: break' is taken.
     """
-    s = "abcdefghij"   # length == width
+    s = "abcdefghij"  # length == width
     pieces = _hard_wrap(s, width_chars=10, overlap_chars=3)
     assert pieces == ["abcdefghij"]
+
 
 def test_edge_66_68_or_short_circuit_first_block_big_code():
     """
@@ -472,6 +514,7 @@ def test_edge_66_68_or_short_circuit_first_block_big_code():
     chunks = c.chunk_text(huge_code)
     # We should get at least one chunk that is the fenced block (added then flushed).
     assert any(seg.strip().startswith("```") and seg.strip().endswith("```") for seg in chunks)
+
 
 def test_edge_88_95_overlap_branch_taken():
     """

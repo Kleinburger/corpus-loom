@@ -1,13 +1,19 @@
 from __future__ import annotations
-import json, requests, glob as _glob, os, hashlib
+
+import glob as _glob
+import hashlib
+import json
+import os
 from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
-from .models import Message, GenerateResult, ChatResult
-from .store import Store
+
+import requests
+
 from .chunking import Chunker
-from .retrieval import Retriever
 from .json_mode import JsonMode
-from .utils import now_ms, hash_key
-from .utils import RateLimiter
+from .models import ChatResult, GenerateResult, Message
+from .retrieval import Retriever
+from .store import Store
+from .utils import RateLimiter, hash_key, now_ms
 
 
 class OllamaClient:
@@ -39,9 +45,7 @@ class OllamaClient:
 
         self.store = Store(cache_db_path)
         self.rate = RateLimiter(calls_per_minute or 0)
-        self.chunker = Chunker(
-            max_tokens=chunk_max_tokens, overlap_tokens=chunk_overlap_tokens
-        )
+        self.chunker = Chunker(max_tokens=chunk_max_tokens, overlap_tokens=chunk_overlap_tokens)
         self.retriever = Retriever(self.store)
         self.json_mode = JsonMode(
             self._post,
@@ -68,9 +72,7 @@ class OllamaClient:
         except KeyError as e:
             raise ValueError(f"Missing template variable: '{e.args[0]}'") from e
 
-    def new_conversation(
-        self, name: Optional[str] = None, system: Optional[str] = None
-    ) -> str:
+    def new_conversation(self, name: Optional[str] = None, system: Optional[str] = None) -> str:
         return self.store.new_conversation(name, system)
 
     def history(self, convo_id: str) -> List[Message]:
@@ -174,9 +176,7 @@ class OllamaClient:
         stream: bool = False,
         on_token: Optional[Callable[[str], None]] = None,
     ) -> ChatResult | Generator[str, None, ChatResult]:
-        self.store.append_message(
-            convo_id, "user", user_message, {"kind": "chat_input"}
-        )
+        self.store.append_message(convo_id, "user", user_message, {"kind": "chat_input"})
         system = self.store.get_conversation_system(convo_id)
         history = self.store.get_history(convo_id)
         msgs = []
@@ -260,9 +260,7 @@ class OllamaClient:
         options: Optional[Dict[str, Any]] = None,
         retries: int = 2,
     ):
-        return self.json_mode.chat_json(
-            convo_id, user_message, schema, options, retries
-        )
+        return self.json_mode.chat_json(convo_id, user_message, schema, options, retries)
 
     def add_text(
         self,
@@ -306,9 +304,7 @@ class OllamaClient:
                 )
                 chunk_ids.append(cid)
         else:
-            vectors = self.embed_texts(
-                chunks, embed_model=embed_model, cache=cache_embeddings
-            )
+            vectors = self.embed_texts(chunks, embed_model=embed_model, cache=cache_embeddings)
             for i, (t, v) in enumerate(zip(chunks, vectors)):
                 ch = hashlib.sha256(t.encode("utf-8")).hexdigest()
                 cid = self.store.insert_chunk(
@@ -413,9 +409,7 @@ class OllamaClient:
 
         return results
 
-    def search_similar(
-        self, query: str, *, embed_model: str = "nomic-embed-text", top_k: int = 5
-    ):
+    def search_similar(self, query: str, *, embed_model: str = "nomic-embed-text", top_k: int = 5):
         qv = self.embed_texts([query], embed_model=embed_model, cache=True)[0]
         ranked = self.retriever.rank_chunks(qv)
         return [r for _, r in ranked[:top_k]]
@@ -442,9 +436,7 @@ class OllamaClient:
     def _post_stream(self, path: str, payload: Dict[str, Any]):
         self.rate.throttle()
         url = f"{self.host}{path}"
-        with requests.post(
-            url, json=payload, stream=True, timeout=self.request_timeout
-        ) as r:
+        with requests.post(url, json=payload, stream=True, timeout=self.request_timeout) as r:
             if r.status_code != 200:
                 raise RuntimeError(f"Ollama returned {r.status_code}: {r.text[:500]}")
             for line in r.iter_lines(decode_unicode=True):

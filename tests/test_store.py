@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import corpusloom.store as store_mod
 from corpusloom.store import Store
 
+
 def test_template_roundtrip(tmp_path):
     db = tmp_path / "db.sqlite"
     s = Store(str(db))
@@ -21,7 +22,7 @@ def test__conn_ctx_rollback_branch(tmp_path):
     s = Store(str(db))
     # Raise inside the with-block so the context manager handles it.
     try:
-        with s._conn_ctx() as con:     # noqa: SLF001 (private OK for white-box test)
+        with s._conn_ctx() as con:  # noqa: SLF001 (private OK for white-box test)
             con.execute("THIS IS NOT VALID SQL")  # triggers sqlite3.OperationalError
     except sqlite3.OperationalError:
         pass
@@ -32,21 +33,24 @@ def test__conn_ctx_rollback_branch(tmp_path):
     with s._conn_ctx() as con:
         con.execute("SELECT 1")
 
+
 def test__conn_ctx_commit_exception_is_suppressed(tmp_path):
     """Exercise the inner commit() except path (commit raises, but is swallowed)."""
     db = tmp_path / "db.sqlite"
     s = Store(str(db))
     # Close the connection before context exit to make commit() raise.
-    with s._conn_ctx() as con:         # noqa: SLF001
+    with s._conn_ctx() as con:  # noqa: SLF001
         con.execute("SELECT 1")
         con.close()  # forces commit() to raise on exit; should be swallowed
     # If we got here without an exception, the branch is covered.
+
 
 def test_get_latest_document_by_source_none(tmp_path):
     """Hit the 'no row' branch returning None."""
     db = tmp_path / "db.sqlite"
     s = Store(str(db))
     assert s.get_latest_document_by_source("missing-source") is None
+
 
 def test_get_chunk_hash_map_has_and_missing_keys(tmp_path):
     """Cover both sides of 'if ch:' inside the loop."""
@@ -64,6 +68,7 @@ def test_get_chunk_hash_map_has_and_missing_keys(tmp_path):
     # Only the hashed one should appear
     assert "H123" in cmap and isinstance(cmap["H123"], str)
     assert len(cmap) == 1
+
 
 def test__conn_ctx_commit_raises_is_swallowed_and_closes(monkeypatch, tmp_path):
     """Force commit() to raise to cover the inner except and the final close() in the else branch."""
@@ -98,12 +103,13 @@ def test__conn_ctx_commit_raises_is_swallowed_and_closes(monkeypatch, tmp_path):
     monkeypatch.setattr(store_mod.sqlite3, "connect", lambda path: fake)
 
     # Now run the context manager: commit() will raise, inner except swallows, then else: close()
-    with s._conn_ctx() as con: 
+    with s._conn_ctx() as con:
         pass
 
     assert fake.commit_called is True
     assert fake.rolled_back is False
     assert fake.closed is True
+
 
 def test_conn_ctx_normal_exit_executes_close(tmp_path):
     """
@@ -145,11 +151,12 @@ def test_conn_ctx_body_exception_triggers_rollback_and_close(monkeypatch, tmp_pa
 
         def close(self):
             self.did_close = True
-        
-        def __enter__(self): return self
 
-        def __exit__(self, exc_type, exc, tb): 
-        # mimic sqlite behavior: rollback on exception, else commit
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            # mimic sqlite behavior: rollback on exception, else commit
             if exc_type is not None:
                 self.rollback()
             else:
@@ -171,6 +178,7 @@ def test_conn_ctx_body_exception_triggers_rollback_and_close(monkeypatch, tmp_pa
     assert fake.did_rollback is True
     assert fake.did_close is True
     assert fake.did_commit is False
+
 
 def test_update_chunk_vector_roundtrip(tmp_path):
     db = tmp_path / "db.sqlite"

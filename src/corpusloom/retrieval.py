@@ -1,8 +1,10 @@
 from __future__ import annotations
+
 import json
 from typing import Any, Dict, List, Tuple
-from .utils import cosine
+
 from .store import Store
+from .utils import cosine
 
 
 class Retriever:

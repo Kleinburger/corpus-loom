@@ -7,9 +7,13 @@ import importlib
 from pathlib import Path
 
 import pytest
+
 TEMPLATES_STORE = {}
+
+
 class StubClient:
     """Stub for cli.OllamaClient that supports all subcommands."""
+
     last_opts = None  # capture default_options from _build_client
 
     def __init__(self, **kw):
@@ -22,16 +26,18 @@ class StubClient:
         self.templates = {}
 
     # ingest / corpus
-    def add_files(self, paths, *, encoding="utf-8", embed_model="nomic-embed-text", strategy="auto"):
+    def add_files(
+        self, paths, *, encoding="utf-8", embed_model="nomic-embed-text", strategy="auto"
+    ):
         # pretend we chunked each file into 2 chunks
-        return [(f"doc-{i+1}", ["c1", "c2"]) for i, _ in enumerate(paths)]
+        return [(f"doc-{i + 1}", ["c1", "c2"]) for i, _ in enumerate(paths)]
 
     # search/context
     def search_similar(self, q, *, embed_model="nomic-embed-text", top_k=5):
         return [{"text": "hit", "score": 0.99, "source": "src"} for _ in range(top_k)]
 
     def build_context(self, q, *, top_k=5, embed_model="nomic-embed-text"):
-        lines = [f"[CTX {i+1} | score=0.99 | src=src]\nchunk-{i+1}" for i in range(top_k)]
+        lines = [f"[CTX {i + 1} | score=0.99 | src=src]\nchunk-{i + 1}" for i in range(top_k)]
         return "\n".join(lines)
 
     # generate
@@ -64,6 +70,7 @@ class StubClient:
         class Obj:
             def model_dump_json(self, indent=2):
                 return json.dumps({"from_schema": True, "prompt": prompt}, indent=indent)
+
         return Obj()
 
     # templates
@@ -76,14 +83,17 @@ class StubClient:
     def render_template(self, template_name, **vars):
         return TEMPLATES_STORE[template_name].format(**vars)
 
+
 def run_with_cli(argv, stdin_text=None):
     import sys, importlib, corpusloom.cli as cli
+
     old_argv = sys.argv
     try:
         sys.argv = argv
         cli.OllamaClient = StubClient
         if stdin_text is not None:
             import io
+
             old_stdin = sys.stdin
             try:
                 sys.stdin = io.StringIO(stdin_text)
@@ -100,10 +110,12 @@ def run_with_cli(argv, stdin_text=None):
         sys.argv = old_argv
         importlib.invalidate_caches()
 
+
 def test_cli_top_help(capsys):
     run_with_cli(["cloom", "--help"])
     out = capsys.readouterr().out + capsys.readouterr().err
     assert "usage" in out.lower()
+
 
 def test_cli_run_as_module_main(monkeypatch):
     # Covers: if __name__ == "__main__": SystemExit(main())
@@ -112,41 +124,48 @@ def test_cli_run_as_module_main(monkeypatch):
         runpy.run_module("corpusloom.cli", run_name="__main__")
     assert ei.value.code in (0, None)
 
+
 def test_cli_parse_options_variants(tmp_path, capsys):
     opts_file = tmp_path / "opts.json"
     opts_file.write_text(json.dumps({"file_opt": 7, "flag": True}), encoding="utf-8")
 
     # includes: int, float, bool, list, bare (warning), opts-json (path), opts-json (string)
-    run_with_cli([
-        "cloom", "generate",
-        "--prompt", "X",
-        "--opt", "top_k=5",
-        "--opt", "temperature=0.25",
-        "--opt", "debug=true",
-        "--opt", "modes=a,b,c",
-        "--opt", "bare",                      # triggers warning
-        "--opts-json", str(opts_file),
-    ])
+    run_with_cli(
+        [
+            "cloom",
+            "generate",
+            "--prompt",
+            "X",
+            "--opt",
+            "top_k=5",
+            "--opt",
+            "temperature=0.25",
+            "--opt",
+            "debug=true",
+            "--opt",
+            "modes=a,b,c",
+            "--opt",
+            "bare",  # triggers warning
+            "--opts-json",
+            str(opts_file),
+        ]
+    )
     # also ensure JSON string path is parsed
-    run_with_cli([
-        "cloom", "generate",
-        "--prompt", "Y",
-        "--opts-json", '{"alpha": 1, "beta": false}'
-    ])
+    run_with_cli(
+        ["cloom", "generate", "--prompt", "Y", "--opts-json", '{"alpha": 1, "beta": false}']
+    )
 
     # non-dict opts-json -> SystemExit
     with pytest.raises(SystemExit):
-        run_with_cli([
-            "cloom", "generate",
-            "--prompt", "Z",
-            "--opts-json", '["not", "a", "dict"]'
-        ])
+        run_with_cli(["cloom", "generate", "--prompt", "Z", "--opts-json", '["not", "a", "dict"]'])
 
     err = capsys.readouterr().err
     assert "ignoring --opt value" in err
 
+
 def test_cli_ingest_search_context_with_out(tmp_path, capsys):
-    f = tmp_path / "a.md"; f.write_text("# A", encoding="utf-8")
+    f = tmp_path / "a.md"
+    f.write_text("# A", encoding="utf-8")
 
     # ingest
     run_with_cli(["cloom", "ingest", str(f)])
@@ -165,16 +184,19 @@ def test_cli_ingest_search_context_with_out(tmp_path, capsys):
     assert "wrote context" in out3
     assert out_path.read_text(encoding="utf-8").startswith("[CTX 1")
 
+
 def test_cli_generate_from_stdin_streaming(capsys):
     # no --prompt/--prompt-file => stdin used; stream branch prints tokens then newline
     run_with_cli(["cloom", "generate", "--stream"], stdin_text="Hello stdin")
     out = capsys.readouterr().out
     assert out == "ABC\n" or out.strip() == "ABC"
 
+
 def test_cli_generate_no_prompt_raises():
     # empty stdin and no prompt -> SystemExit
     with pytest.raises(SystemExit):
         run_with_cli(["cloom", "generate"], stdin_text="")
+
 
 def test_cli_chat_new_send_history(capsys):
     # new + auto message
@@ -188,33 +210,41 @@ def test_cli_chat_new_send_history(capsys):
     assert "echo:ping" in out2
 
     # send stream
-    run_with_cli(["cloom", "chat", "send", "--convo-id", "convo-1", "--message", "pong", "--stream"])
+    run_with_cli(
+        ["cloom", "chat", "send", "--convo-id", "convo-1", "--message", "pong", "--stream"]
+    )
     out3 = capsys.readouterr().out
     assert out3.strip().endswith("y")  # streamed "x","y"
 
     # history
     run_with_cli(["cloom", "chat", "history", "--convo-id", "convo-1"])
     out4 = capsys.readouterr().out
-    assert "user: hello" in out4 and "assistant: {\"ok\":true}" in out4
+    assert "user: hello" in out4 and 'assistant: {"ok":true}' in out4
+
 
 def test_cli_json_without_schema_uses_extract(capsys):
     run_with_cli(["cloom", "json", "--prompt", '{"a":1}'])
     out = capsys.readouterr().out
     assert out.strip().startswith("{")  # printed raw JSON (already valid)
 
+
 def test_cli_json_with_schema_ok(monkeypatch, capsys):
     # fabricate a module with a class name, then ensure cli imports it successfully
     mod = types.ModuleType("tmp_schema_mod")
+
     class DummyModel: ...
+
     mod.DummyModel = DummyModel
     sys.modules["tmp_schema_mod"] = mod
     run_with_cli(["cloom", "json", "--prompt", "X", "--schema", "tmp_schema_mod:DummyModel"])
     out = capsys.readouterr().out
     assert '"from_schema": true' in out
 
+
 def test_cli_json_with_schema_import_error():
     with pytest.raises(SystemExit):
         run_with_cli(["cloom", "json", "--prompt", "X", "--schema", "nope_mod:Nope"])
+
 
 @pytest.mark.filterwarnings("ignore:unclosed file:ResourceWarning")
 def test_cli_template_add_list_render(tmp_path, capsys):
@@ -237,35 +267,62 @@ def test_cli_template_add_list_render(tmp_path, capsys):
     out3 = capsys.readouterr().out.strip()
     assert out3 == "Hello World"
 
+
 def test_cmd_template_fallback_return_1(monkeypatch):
     # Patch ArgumentParser.parse_args inside the function to bypass required subparser
     import corpusloom.cli as cli
+
     cli.OllamaClient = StubClient
 
     def fake_parse_args(self, argv):
         # subcmd unrecognized; include all common args to pass _build_client
         return types.SimpleNamespace(
             subcmd="unknown",
-            model="m", host="h", db=":memory:", keep_alive="0", calls_per_minute=0,
-            opt=[], opts_json=None,
-            name=None, file=None, var=[],  # template branch args
+            model="m",
+            host="h",
+            db=":memory:",
+            keep_alive="0",
+            calls_per_minute=0,
+            opt=[],
+            opts_json=None,
+            name=None,
+            file=None,
+            var=[],  # template branch args
         )
-    monkeypatch.setattr(importlib.import_module("argparse").ArgumentParser, "parse_args", fake_parse_args)
+
+    monkeypatch.setattr(
+        importlib.import_module("argparse").ArgumentParser, "parse_args", fake_parse_args
+    )
     assert cli.cmd_template([]) == 1
+
 
 def test_cmd_chat_fallback_return_1(monkeypatch):
     import corpusloom.cli as cli
+
     cli.OllamaClient = StubClient
 
     def fake_parse_args(self, argv):
         return types.SimpleNamespace(
             subcmd="weird",
-            model="m", host="h", db=":memory:", keep_alive="0", calls_per_minute=0,
-            opt=[], opts_json=None,
-            convo_id="c", message="hi", stream=False, name=None, system=None
+            model="m",
+            host="h",
+            db=":memory:",
+            keep_alive="0",
+            calls_per_minute=0,
+            opt=[],
+            opts_json=None,
+            convo_id="c",
+            message="hi",
+            stream=False,
+            name=None,
+            system=None,
         )
-    monkeypatch.setattr(importlib.import_module("argparse").ArgumentParser, "parse_args", fake_parse_args)
+
+    monkeypatch.setattr(
+        importlib.import_module("argparse").ArgumentParser, "parse_args", fake_parse_args
+    )
     assert cli.cmd_chat([]) == 1
+
 
 def test_main_unknown_cmd_returns_1(monkeypatch):
     # Force parse_known_args to produce an unknown cmd
@@ -274,22 +331,37 @@ def test_main_unknown_cmd_returns_1(monkeypatch):
     def fake_parse_known_args(self, argv):
         ns = types.SimpleNamespace(cmd="unknown")
         return ns, []
-    monkeypatch.setattr(importlib.import_module("argparse").ArgumentParser, "parse_known_args", fake_parse_known_args)
+
+    monkeypatch.setattr(
+        importlib.import_module("argparse").ArgumentParser,
+        "parse_known_args",
+        fake_parse_known_args,
+    )
 
     assert cli.main(["bogus"]) == 1
 
+
 def test_read_prompt_from_file(tmp_path, capsys):
-    p = tmp_path / "p.txt"; p.write_text("FROM_FILE", encoding="utf-8")
+    p = tmp_path / "p.txt"
+    p.write_text("FROM_FILE", encoding="utf-8")
     run_with_cli(["cloom", "generate", "--prompt-file", str(p)])
     out = capsys.readouterr().out
     assert "GEN_OK" in out
 
+
 def test_read_prompt_no_input_raises(monkeypatch):
     import corpusloom.cli as cli
+
     class S:
-        def __init__(self, **kw): pass
-        class R: response_text = "OK"
-        def generate(self, prompt, stream=False): return self.R()
+        def __init__(self, **kw):
+            pass
+
+        class R:
+            response_text = "OK"
+
+        def generate(self, prompt, stream=False):
+            return self.R()
+
     cli.OllamaClient = S
     # no prompt args and empty stdin -> SystemExit with message
     monkeypatch.setattr(sys, "argv", ["cloom", "generate"])

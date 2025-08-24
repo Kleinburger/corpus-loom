@@ -27,9 +27,10 @@ from corpusloom.utils import extract_json_str
 
 HOST = os.getenv("OCP_HOST", "http://localhost:11434")
 MODEL = os.getenv("OCP_MODEL", "gpt-oss:20b")
-DB    = os.getenv("OCP_DB", "./.ollama_client/cache.sqlite")
-KEEP  = os.getenv("OCP_KEEP_ALIVE", "10m")
-CPM   = int(os.getenv("OCP_CPM", "0"))
+DB = os.getenv("OCP_DB", "./.ollama_client/cache.sqlite")
+KEEP = os.getenv("OCP_KEEP_ALIVE", "10m")
+CPM = int(os.getenv("OCP_CPM", "0"))
+
 
 def make_client() -> OllamaClient:
     print(f"[i] Connecting to {HOST} model={MODEL} db={DB}")
@@ -37,10 +38,11 @@ def make_client() -> OllamaClient:
         model=MODEL,
         host=HOST,
         cache_db_path=DB,
-        default_options={},    # you can pre-seed any model options here
+        default_options={},  # you can pre-seed any model options here
         keep_alive=KEEP,
         calls_per_minute=CPM,  # simple client-side rate limiter; 0=off
     )
+
 
 def demo_ingest(client: OllamaClient) -> str:
     """
@@ -51,10 +53,16 @@ def demo_ingest(client: OllamaClient) -> str:
     with open(path, "w", encoding="utf-8") as f:
         f.write("Alpha\n\nBeta\n\nGamma\n\n```py\nprint('hello')\n```")
     print(f"[i] Ingesting: {path}")
-    results = client.add_files([path], encoding="utf-8", embed_model="nomic-embed-text", strategy="replace")
+    results = client.add_files(
+        [path], encoding="utf-8", embed_model="nomic-embed-text", strategy="replace"
+    )
     # results ~ [("doc_id", ["chunk_id", ...])]
-    print("[ok] Ingested:", json.dumps({"ingested": [{"doc_id": d, "chunks": len(ch)} for d, ch in results]}, indent=2))
+    print(
+        "[ok] Ingested:",
+        json.dumps({"ingested": [{"doc_id": d, "chunks": len(ch)} for d, ch in results]}, indent=2),
+    )
     return path
+
 
 def demo_search_and_context(client: OllamaClient) -> None:
     print("\n[i] Searching for: 'Alpha'")
@@ -65,6 +73,7 @@ def demo_search_and_context(client: OllamaClient) -> None:
     ctx = client.build_context("Alpha", top_k=2, embed_model="nomic-embed-text")
     print("[context]\n" + ctx)
 
+
 def demo_generate(client: OllamaClient) -> None:
     print("\n[i] One-shot, non-stream:")
     res = client.generate("Write a single short sentence about alpacas.")
@@ -74,6 +83,7 @@ def demo_generate(client: OllamaClient) -> None:
     for tok in client.generate("Stream three short words, space-separated.", stream=True):
         print(tok, end="", flush=True)
     print()
+
 
 def demo_chat(client: OllamaClient) -> None:
     print("\n[i] Chat demo:")
@@ -92,6 +102,7 @@ def demo_chat(client: OllamaClient) -> None:
     for m in client.history(convo_id):
         print(f"  {m.role}: {m.content}")
 
+
 def demo_templates(client: OllamaClient) -> None:
     print("\n[i] Templates demo:")
     client.register_template("hello", "Hello {name2}, welcome to {place}!")
@@ -100,6 +111,7 @@ def demo_templates(client: OllamaClient) -> None:
     print("  Templates:", json.dumps(tmpls, indent=2, ensure_ascii=False))
     rendered = client.render_template("hello", name2="Ethan", place="CorpusLoom")
     print("  Rendered:", rendered)
+
 
 def demo_json_mode(client: OllamaClient) -> None:
     print("\n[i] JSON-mode demo:")
@@ -138,6 +150,7 @@ def demo_json_mode(client: OllamaClient) -> None:
     except Exception:
         print("  (Could not parse; model may have returned non-JSON.)")
 
+
 def main() -> int:
     client = make_client()
 
@@ -156,6 +169,7 @@ def main() -> int:
 
     print("\n[done]")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

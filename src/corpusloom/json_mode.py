@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any, Dict, Optional, Type
+
 from .exceptions import ValidationFailedError
 from .utils import extract_json_str
 
@@ -136,9 +138,7 @@ class JsonMode:
                 continue
             try:
                 obj = self._pydantic_from_json(schema, jtxt)
-                self._append(
-                    convo_id, "assistant", candidate, {"kind": "chat_json_output"}
-                )
+                self._append(convo_id, "assistant", candidate, {"kind": "chat_json_output"})
                 return obj
             except Exception as ve:
                 msgs += [
