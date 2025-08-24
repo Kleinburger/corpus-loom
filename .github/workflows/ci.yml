@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build-test:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,10 +39,33 @@ jobs:
         with:
           name: coverage-${{ matrix.python-version }}
           path: htmlcov.tgz
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build package
+        run: |
+          python -m pip install -U pip build
+          python -m pip install -e ".[dev]"
+          python -m build
+          ls -l dist
+      - name: Upload Built distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
     needs:
-    - build-test
+    - build
     runs-on: ubuntu-latest
 
     environment:
@@ -62,9 +85,10 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+
   publish:
     name: Publish to PyPI
-    needs: build-test
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: pypi
