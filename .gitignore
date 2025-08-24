@@ -4,3 +4,4 @@ tests/__pycache__
 src/corpusloom/__pycache__
 .coverage
 .ollama_client
+src/corpus_loom.egg-info
