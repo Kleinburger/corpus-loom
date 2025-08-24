@@ -62,7 +62,7 @@ def extract_json_str(text: str) -> Optional[str]:
             if (top == "{" and ch != "}") or (top == "[" and ch != "]"):
                 return None
             if not stack:
-                candidate = text[start : j + 1].strip()
+                candidate = text[start: j + 1].strip()
                 try:
                     json.loads(candidate)
                     return candidate
