@@ -18,8 +18,8 @@ class Chunker:
         code_pat = re.compile(r"```.*?```", re.S)
         pos = 0
         for m in code_pat.finditer(t):
-            pre = t[pos: m.start()]
-            code = t[m.start(): m.end()]
+            pre = t[pos : m.start()]
+            code = t[m.start() : m.end()]
             if pre.strip():
                 blocks.extend(_split_paragraphs(pre))
             blocks.append(code)

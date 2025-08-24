@@ -11,11 +11,9 @@ try:
     _PYDANTIC_AVAILABLE = True
 except Exception:
 
-    class BaseModel:
-        ...  # type: ignore
+    class BaseModel: ...  # type: ignore
 
-    class ValidationError(Exception):
-        ...
+    class ValidationError(Exception): ...
 
     _PYDANTIC_AVAILABLE = False
 
