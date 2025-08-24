@@ -12,8 +12,6 @@ class Retriever:
         results: List[Tuple[float, Dict[str, Any]]] = []
         for row in self.store.iter_chunks():
             vec_json = row[4]
-            if not vec_json:
-                continue
             vec = json.loads(vec_json)
             sim = cosine(qvec, vec)
             results.append((sim, {
