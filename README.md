@@ -77,14 +77,14 @@ res = client.generate(f"Using this context, outline tests:\n{ctx}")
 print(res.response_text)
 
 # 4) Enforce structured JSON with Pydantic
-class MiniPlan(BaseModel):
+class Plan(BaseModel):
     requirement_id: str
     overview: str
     cases: List[str] = Field(default_factory=list)
 
 plan = client.generate_json(
-    prompt="Create a MiniPlan for REQ-123 from this context:\n" + ctx,
-    schema=MiniPlan,   # validated; auto-repair loop on validation error
+    prompt="Create a Plan for REQ-123 from this context:\n" + ctx,
+    schema=Plan,   # validated; auto-repair loop on validation error
 )
 print(plan)
 ```
@@ -167,13 +167,13 @@ If validation fails, a **repair loop** is auto-prompted (bounded retries).
 from typing import List
 from pydantic import BaseModel, Field
 
-class TestCase(BaseModel):
+class Case(BaseModel):
     id: str
     title: str
     steps: List[str]
     expected: List[str]
 
-class TestPlan(BaseModel):
+class Plan(BaseModel):
     requirement_id: str
     overview: str
     cases: List[TestCase] = Field(default_factory=list)
@@ -421,3 +421,5 @@ A: You can set `options={"format": "json"}`. The Pydantic path is still recommen
 ---
 
 **CorpusLoom** — Local RAG + typed JSON on Ollama, wrapped in a clean Python API and `cloom` CLI.
+
+Created on personal time and equipment; unrelated to Employer’s business.
