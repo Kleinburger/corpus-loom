@@ -70,7 +70,7 @@ client = OllamaClient(
 client.add_files(["docs/**/*.md", "specs/*.txt"])  # chunk + embed + store
 
 # 2) Build a context block via similarity search (RAG)
-ctx = client.build_context("overshoot < 5% attitude controller", top_k=5)
+ctx = client.build_context("overshoot < 5% controller threshold", top_k=5)
 
 # 3) Generate using that context
 res = client.generate(f"Using this context, outline tests:\n{ctx}")
@@ -130,7 +130,7 @@ cloom json --prompt 'Return ONLY a JSON object with fields a, b'
 Single-shot text completion via Ollama’s `/api/generate`.
 
 ```python
-res = client.generate("Write a haiku about orbital control.")
+res = client.generate("Write a haiku about communication control.")
 print(res.response_text)
 ```
 
@@ -283,7 +283,7 @@ cloom ingest docs/**/*.md --strategy auto --opt num_ctx=16384
 cloom search "overshoot < 5%" --top-k 6
 
 # Build a stitched context block
-cloom context "attitude controller step response" --top-k 6 --out ctx.md
+cloom context "controller step response" --top-k 6 --out ctx.md
 
 # Single-shot generation (stream or non-stream)
 cloom generate --prompt-file prompt.txt --opt temperature=0.2 --stream
@@ -328,7 +328,7 @@ cloom context "overshoot < 5%" --top-k 8 | \
 
 **5) Fast answers / debugging**  
 ```bash
-cloom generate --prompt "Summarize 3 risks for uplink comms." \
+cloom generate --prompt "Summarize 3 risks for communication transport." \
   --opt num_predict=200 --opt temperature=0.2
 ```
 
@@ -339,16 +339,16 @@ cloom generate --prompt "Summarize 3 risks for uplink comms." \
 Register, list, and render prompt templates:
 
 ```bash
-cloom template add --name testplan --file templates/testplan.md
+cloom template add --name plan --file templates/plan.md
 cloom template list
-cloom template render --name testplan --var requirement=REQ-045 --var phase=init
+cloom template render --name plan --var requirement=REQ-045 --var phase=init
 ```
 
 Python:
 
 ```python
 client.register_template("risk", "List risks for {system} in {phase}.")
-prompt = client.render_template("risk", system="uplink comms", phase="init")
+prompt = client.render_template("risk", system="communication transport", phase="init")
 res = client.generate(prompt)
 ```
 
