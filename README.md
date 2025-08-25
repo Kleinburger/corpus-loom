@@ -381,7 +381,7 @@ for delta in client.chat(cid, "Hello!", stream=True):
 
 ## Tests, coverage, and CI
 
-- Tests are written with the Goal to achieve **100% branch coverage** (a practical proxy for MC/DC).  **Currently 93.43%**
+- Tests are written with the Goal to achieve **100% branch coverage** (a practical proxy for MC/DC).  **Currently 97%**
 - GitHub Actions workflow runs:
   - Lint (`ruff`), type check (`mypy`)
   - `pytest --cov=corpusloom --cov-branch --cov-fail-under=100`
