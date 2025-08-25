@@ -83,7 +83,7 @@ class Plan(BaseModel):
     cases: List[str] = Field(default_factory=list)
 
 plan = client.generate_json(
-    prompt="Create a Plan for REQ-123 from this context:\n" + ctx,
+    prompt="Create a Test for Use Case from this context:\n" + ctx,
     schema=Plan,   # validated; auto-repair loop on validation error
 )
 print(plan)
@@ -145,7 +145,7 @@ Multi-turn conversations via `/api/chat`. History is **persisted**.
 
 ```python
 cid = client.new_conversation(system="Be concise and cite standards when relevant.")
-r1 = client.chat(cid, "Draft test cases for REQ-045.")
+r1 = client.chat(cid, "Draft test for Use-Case-045.")
 r2 = client.chat(cid, "Add fuzzing strategies for sensor noise.")
 print(r2.reply.content)
 
@@ -179,7 +179,7 @@ class Plan(BaseModel):
     cases: List[TestCase] = Field(default_factory=list)
 
 obj = client.generate_json(
-    "Create a plan for REQ-045 from the context below:\n" + ctx,
+    "Create a plan for Use-Case-045 from the context below:\n" + ctx,
     schema=TestPlan,
     # options={"temperature": 0.0},  # default forced to 0.0 for JSON mode
 )
@@ -341,7 +341,7 @@ Register, list, and render prompt templates:
 ```bash
 cloom template add --name plan --file templates/plan.md
 cloom template list
-cloom template render --name plan --var requirement=REQ-045 --var phase=init
+cloom template render --name plan --var requirement=Use-Case-045 --var phase=init
 ```
 
 Python:
