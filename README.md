@@ -83,7 +83,7 @@ class Plan(BaseModel):
     cases: List[str] = Field(default_factory=list)
 
 plan = client.generate_json(
-    prompt="Create a Test for Use Case from this context:\n" + ctx,
+    prompt="Create a Plan for Use Case from this context:\n" + ctx,
     schema=Plan,   # validated; auto-repair loop on validation error
 )
 print(plan)
@@ -180,7 +180,7 @@ class Plan(BaseModel):
 
 obj = client.generate_json(
     "Create a plan for Use-Case-045 from the context below:\n" + ctx,
-    schema=TestPlan,
+    schema=Plan,
     # options={"temperature": 0.0},  # default forced to 0.0 for JSON mode
 )
 ```
